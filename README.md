@@ -9,7 +9,7 @@ React + Cornerstone.js 的 DICOM 影像檢視器（512×512 視窗、滾輪切�
 - **切片計數器**：右上角顯示目前切片編號
 - **快速跳轉表**：點選表格快速跳至 100、150、200 切片
 - **載入提示**：讀取 DICOM 時顯示載入狀態
-- **WADO 載入**: 以 `cornerstone-wado-image-loader` 讀取 `/DICOM_test_files/*.dcm`
+- **WADO 載入**：以 `cornerstone-wado-image-loader` 讀取由 Vite 收集的 `.dcm` 資源 URL
 
 ## 使用方式
 
@@ -32,9 +32,9 @@ React + Cornerstone.js 的 DICOM 影像檢視器（512×512 視窗、滾輪切�
 
 - **主要元件**：`src/components/DicomViewer.jsx`（唯一元件）
 - **載入流程**：
-  1) 將檔名轉為 `wadouri:/DICOM_test_files/xxx.dcm`
-  2) `cornerstone.loadAndCacheImage(imageId)` 讀取並快取
-  3) `cornerstone.displayImage(element, image)` 顯示
+  1) 以 `import.meta.glob('/src/assets/**/*.dcm', { query: '?url', import: 'default', eager: true })` 收集 URL
+  2) 將每個 URL 轉為 `wadouri:URL` 的 imageId
+  3) `cornerstone.loadAndCacheImage(imageId)` 讀取並快取 → `cornerstone.displayImage()` 顯示
 - **dicom-parser 與 loader 分工**：
   - dicom-parser 解析位元流為 DataSet（標籤/offset/length），不負責解壓
   - wado image loader 依 Transfer Syntax 決定是否解碼（JPEG/J2K/JLS/RLE 透過 codec/worker）
@@ -54,36 +54,20 @@ React + Cornerstone.js 的 DICOM 影像檢視器（512×512 視窗、滾輪切�
 
 ```
 src/
-├── App.jsx                 # 入口（渲染 DicomViewer）
-├── index.css               # 簡易 reset
-├── main.jsx                # 掛載入口
+├── App.jsx                       # 入口（渲染 DicomViewer）
+├── index.css                     # 簡易 reset
+├── main.jsx                      # 掛載入口
+├── assets/
+│   └── DICOM_test_files/         # 主要 DICOM 檔案目錄（Vite 會自動收集）
+│       ├── 00000001.dcm
+│       ├── 00000002.dcm
+│       └── ...
 └── components/
-    ├── DicomViewer.jsx     # 檢視器（邏輯 + UI）
-    └── DicomViewer.css     # 元件樣式
-
-public/
-└── DICOM_test_files/    # DICOM 檔案目錄
-    ├── 00000001.dcm
-    ├── 00000002.dcm
-    └── ... (93 total files)
+    ├── DicomViewer.jsx           # 檢視器（邏輯 + UI）
+    └── DicomViewer.css           # 元件樣式
 ```
 
-## 傳入檔案陣列（可選）
-
-可由外層傳入自訂檔案清單，未提供則預設載入 `00000001.dcm`～`00000093.dcm`：
-
-```jsx
-import DicomViewer from './components/DicomViewer'
-
-const files = [
-  '/DICOM_test_files/00000001.dcm',
-  '/DICOM_test_files/00000002.dcm',
-]
-
-export default function App() {
-  return <DicomViewer files={files} />
-}
-```
+<!-- 移除外部 files prop：現行以 Vite 自動收集 src/assets 下的 .dcm 檔案 -->
 
 ## 瀏覽器相容性
 

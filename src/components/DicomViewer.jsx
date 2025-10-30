@@ -8,12 +8,19 @@ import dicomParser from 'dicom-parser'
 cornerstoneWADOImageLoader.external.cornerstone = cornerstone
 cornerstoneWADOImageLoader.external.dicomParser = dicomParser
 
+// 以 Vite 在編譯期自動收集 src/assets 下的 .dcm 檔案 URL（開發期最簡）
+const DICOM_GLOB_URLS = Object.values(
+  import.meta.glob('/src/assets/DICOM_test_files/*.dcm', { query: '?url', import: 'default', eager: true })
+)
+
+// 單一檢視器元件：負責初始化 Cornerstone、載入影像、處理滾輪與快速跳轉
 function DicomViewer() {
   const elementRef = useRef(null)
   const [currentSlice, setCurrentSlice] = useState(0)
   const [imageIds, setImageIds] = useState([])
   const [isCornerstoneEnabled, setIsCornerstoneEnabled] = useState(false)
 
+  // 顯示指定 slice（0-based）
   const displayImageAtSlice = useCallback(async (sliceIndex) => {
     if (!elementRef.current || !isCornerstoneEnabled || imageIds.length === 0) return
     try {
@@ -27,34 +34,41 @@ function DicomViewer() {
   }, [imageIds, isCornerstoneEnabled])
 
 
+  // 初始化：取得檔案列表 → 生成 imageIds → 載入第一張 → 綁定清理
   useEffect(() => {
     const element = elementRef.current
     if (!element) return
 
-    const dicomFiles = Array.from({ length: 93 }, (_, i) =>
-      `/DICOM_test_files/${String(i + 1).padStart(8, '0')}.dcm`
-    )
+    // 取得要載入的 DICOM 檔案清單（優先：Vite glob；否則略過）
+    const loadFiles = async () => {
+      if (Array.isArray(DICOM_GLOB_URLS) && DICOM_GLOB_URLS.length > 0) return DICOM_GLOB_URLS
+    }
 
     const initViewer = async () => {
       try {
+        // 啟用 Cornerstone（若已啟用會略過）
         try { 
           cornerstone.enable(element) 
         } catch (err) { 
             console.warn('enable skipped:', err?.message || err) 
         }
 
+        // 設定 WADO 載入器（使用 Web Workers）
         cornerstoneWADOImageLoader.configure({
           useWebWorkers: true,
           decodeConfig: { convertFloatPixelDataToInt: false },
         })
 
+        // 檔案 → imageId（wadouri:URL）
+        const dicomFiles = await loadFiles()
         const ids = dicomFiles.map(f => `wadouri:${f}`)
         if (!ids.length) {
-          console.error('No DICOM files found in /DICOM_test_files')
+          console.error('No DICOM files found')
           return
         }
 
         setImageIds(ids)
+        // 載入並顯示第一張
         const first = await cornerstone.loadAndCacheImage(ids[0])
         cornerstone.displayImage(element, first)
         setCurrentSlice(0)
@@ -72,6 +86,7 @@ function DicomViewer() {
     }
   }, [])
 
+  // 滾輪事件：向上/下滾動切換 slice（含邊界保護）
   useEffect(() => {
     const element = elementRef.current
     if (!element || !isCornerstoneEnabled || imageIds.length === 0) return
@@ -89,6 +104,7 @@ function DicomViewer() {
     return () => element.removeEventListener('wheel', handleWheel)
   }, [currentSlice, imageIds.length, isCornerstoneEnabled, displayImageAtSlice])
 
+  // 表格快速跳轉（1-based → 0-based）
   const jumpToSlice = useCallback(async (targetSlice) => {
     if (!isCornerstoneEnabled || imageIds.length === 0) return
     const sliceIndex = targetSlice - 1
