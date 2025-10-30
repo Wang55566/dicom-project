@@ -12,7 +12,6 @@ function DicomViewer() {
   const elementRef = useRef(null)
   const [currentSlice, setCurrentSlice] = useState(0)
   const [imageIds, setImageIds] = useState([])
-  const [isLoading] = useState(false)
   const [isCornerstoneEnabled, setIsCornerstoneEnabled] = useState(false)
 
   const displayImageAtSlice = useCallback(async (sliceIndex) => {
@@ -108,10 +107,9 @@ function DicomViewer() {
     <div className="dv-root">
       <div className="dv-viewport-wrap">
         <div ref={elementRef} className="dv-viewport" />
-        {!isLoading && isCornerstoneEnabled && (
+        {isCornerstoneEnabled && (
           <div className="dv-counter">Slice: {currentSlice + 1}/{imageIds.length}</div>
         )}
-        {isLoading && (<div className="dv-loading">Loading DICOM images...</div>)}
       </div>
       <div className="dv-nav">
         <table>
@@ -134,7 +132,7 @@ function DicomViewer() {
                 >
                   {idx}
                 </td>
-                <td className="dv-disabled">
+                <td>
                   {slice}
                 </td>
               </tr>
