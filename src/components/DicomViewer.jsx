@@ -133,8 +133,18 @@ function DicomViewer() {
           <thead>
             <tr>
               <th>Index</th>
-              {[ 1,2,3 ].map((idx) => (
-                <th key={idx}>{idx}</th>
+              {[
+                { idx: 1, slice: 100 },
+                { idx: 2, slice: 150 },
+                { idx: 3, slice: 200 },
+              ].map(({ idx, slice }) => (
+                <th
+                  key={idx}
+                  className={`${!sliceExists(slice) ? 'dv-disabled' : ''} ${currentSlice + 1 === slice ? 'dv-selected' : ''}`.trim()}
+                  onClick={() => sliceExists(slice) && jumpToSlice(slice)}
+                >
+                  {idx}
+                </th>
               ))}
             </tr>
           </thead>
@@ -146,13 +156,7 @@ function DicomViewer() {
                 { idx: 2, slice: 150 },
                 { idx: 3, slice: 200 },
               ].map(({ idx, slice }) => (
-                <td
-                  key={idx}
-                  className={`${!sliceExists(slice) ? 'dv-disabled' : ''} ${currentSlice + 1 === slice ? 'dv-selected' : ''}`.trim()}
-                  onClick={() => sliceExists(slice) && jumpToSlice(slice)}
-                >
-                  {slice}
-                </td>
+                <td key={idx}>{slice}</td>
               ))}
             </tr>
           </tbody>

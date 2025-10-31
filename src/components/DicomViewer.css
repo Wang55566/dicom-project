@@ -49,20 +49,22 @@
   background: #f2f2f2; 
 }
 
-.dv-nav tbody td:not(:first-child):not(.dv-disabled) { 
+.dv-nav thead th:not(:first-child):not(.dv-disabled) { 
   cursor: pointer; 
 }
 
-.dv-nav tbody td:not(:first-child):hover:not(.dv-disabled) { 
+.dv-nav thead th:not(:first-child):hover:not(.dv-disabled) { 
   background-color: #f5faff; 
   color: #000; 
 }
 
+.dv-nav th.dv-disabled,
 .dv-nav td.dv-disabled { 
   color: #999; 
   cursor: not-allowed; 
 }
 
+.dv-nav th.dv-selected,
 .dv-nav td.dv-selected { 
   background-color: #eef2ff; 
 }
