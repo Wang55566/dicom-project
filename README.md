@@ -1,6 +1,4 @@
-# DICOM 前端工程試題
-
-React + Cornerstone.js 的 DICOM 影像檢視器（512×512 視窗、滾輪切片、快速跳轉）。
+# DICOM 前端
 
 ## 功能
 
@@ -26,9 +24,8 @@ React + Cornerstone.js 的 DICOM 影像檢視器（512×512 視窗、滾輪切�
 
 4. 檢視資訊：
    - 右上角顯示目前切片編號
-   - 表格中已選切片會有醒目反白
 
-## 技術重點（架構）
+## 架構
 
 - **主要元件**：`src/components/DicomViewer.jsx`（唯一元件）
 - **載入流程**：
@@ -53,7 +50,7 @@ React + Cornerstone.js 的 DICOM 影像檢視器（512×512 視窗、滾輪切�
 ```
 src/
 ├── App.jsx                       # 入口（渲染 DicomViewer）
-├── index.css                     # 簡易 reset
+├── index.css                     
 ├── main.jsx                      # 掛載入口
 ├── assets/
 │   └── DICOM_test_files/         # 主要 DICOM 檔案目錄（Vite 會自動收集）
@@ -64,11 +61,3 @@ src/
     ├── DicomViewer.jsx           # 檢視器（邏輯 + UI）
     └── DicomViewer.css           # 元件樣式
 ```
-
-## 瀏覽器相容性
-
-需要現代瀏覽器並支援：
-- ES6+ JavaScript
-- Canvas API
-- Web Workers（影像處理）
-- File API（DICOM 載入）
