@@ -26,6 +26,7 @@ function DicomViewer() {
     try {
       const imageId = imageIds[sliceIndex]
       const image = await cornerstone.loadAndCacheImage(imageId)
+      // const totalFrames = image.data.string('x00280008')
       cornerstone.displayImage(elementRef.current, image)
       setCurrentSlice(sliceIndex)
     } catch (error) {
@@ -104,7 +105,7 @@ function DicomViewer() {
     return () => element.removeEventListener('wheel', handleWheel)
   }, [currentSlice, imageIds.length, isCornerstoneEnabled, displayImageAtSlice])
 
-  // 表格快速跳轉（1-based → 0-based）
+  // 點擊表格快速跳轉
   const jumpToSlice = useCallback(async (targetSlice) => {
     if (!isCornerstoneEnabled || imageIds.length === 0) return
     const sliceIndex = targetSlice - 1

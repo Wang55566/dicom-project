@@ -1,4 +1,4 @@
-# DICOM 檢視器
+# DICOM 前端工程試題
 
 React + Cornerstone.js 的 DICOM 影像檢視器（512×512 視窗、滾輪切片、快速跳轉）。
 
@@ -37,14 +37,12 @@ React + Cornerstone.js 的 DICOM 影像檢視器（512×512 視窗、滾輪切�
   3) `cornerstone.loadAndCacheImage(imageId)` 讀取並快取 → `cornerstone.displayImage()` 顯示
 - **dicom-parser 與 loader 分工**：
   - dicom-parser 解析位元流為 DataSet（標籤/offset/length），不負責解壓
-  - wado image loader 依 Transfer Syntax 決定是否解碼（JPEG/J2K/JLS/RLE 透過 codec/worker）
-- **多幀**: 以 `?frame=N` 逐幀取用（本案以多檔堆疊切換）
-- **Web Workers**: 預設開啟，減少主執行緒阻塞
+  - wado image loader 依 Transfer Syntax 決定是否解碼
 
 ## 相依套件
 
 - `cornerstone-core`：Cornerstone 核心
-  （未啟用 `cornerstone-tools`，可後續擴充）
+  （未啟用 `cornerstone-tools`）
 - `cornerstone-wado-image-loader`：DICOM 載入
 - `dicom-parser`：DICOM 解析
 - `react`：React 框架
@@ -66,8 +64,6 @@ src/
     ├── DicomViewer.jsx           # 檢視器（邏輯 + UI）
     └── DicomViewer.css           # 元件樣式
 ```
-
-<!-- 移除外部 files prop：現行以 Vite 自動收集 src/assets 下的 .dcm 檔案 -->
 
 ## 瀏覽器相容性
 
