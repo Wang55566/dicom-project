@@ -19,6 +19,7 @@ function DicomViewer() {
   const [currentSlice, setCurrentSlice] = useState(0)
   const [imageIds, setImageIds] = useState([])
   const [isCornerstoneEnabled, setIsCornerstoneEnabled] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   // 檢測 DICOM 檔案是否為多幀，並返回所有 imageIds（包含展開的多幀）
   const buildImageIds = useCallback(async (dicomFiles) => {
@@ -80,6 +81,8 @@ function DicomViewer() {
 
     const initViewer = async () => {
       try {
+        setIsLoading(true)
+        
         // 啟用 Cornerstone（若已啟用會略過）
         try { 
           cornerstone.enable(element) 
@@ -115,6 +118,8 @@ function DicomViewer() {
         setIsCornerstoneEnabled(true)
       } catch (err) {
         console.error('Error initializing Cornerstone:', err?.message || err)
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -169,7 +174,13 @@ function DicomViewer() {
     <div className="dv-root">
       <div className="dv-viewport-wrap">
         <div ref={elementRef} className="dv-viewport" />
-        {isCornerstoneEnabled && (
+        {isLoading && (
+          <div className="dv-loading">
+            <div className="dv-loading-spinner"></div>
+            <div className="dv-loading-text">Loading DICOM files...</div>
+          </div>
+        )}
+        {isCornerstoneEnabled && !isLoading && (
           <div className="dv-counter">Slice: {currentSlice + 1}/{imageIds.length}</div>
         )}
       </div>
