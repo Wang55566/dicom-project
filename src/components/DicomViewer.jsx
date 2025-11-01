@@ -36,7 +36,6 @@ function DicomViewer() {
         if (numberOfFrames && parseInt(numberOfFrames) > 1) {
           // 多幀圖像：為每一幀生成 imageId
           const frameCount = parseInt(numberOfFrames)
-          console.log(`多幀圖像 ${fileUrl}: ${frameCount} 幀`)
           for (let frame = 0; frame < frameCount; frame++) {
             allImageIds.push(`${baseImageId}?frame=${frame}`)
           }
@@ -45,7 +44,7 @@ function DicomViewer() {
           allImageIds.push(baseImageId)
         }
       } catch (error) {
-        console.warn(`無法讀取 ${fileUrl}:`, error)
+        console.error(`無法讀取 ${fileUrl}:`, error)
         // 即使讀取失敗，也加入 base imageId（讓後續錯誤處理）
         allImageIds.push(`wadouri:${fileUrl}`)
       }
@@ -85,7 +84,7 @@ function DicomViewer() {
         try { 
           cornerstone.enable(element) 
         } catch (err) { 
-            console.warn('enable skipped:', err?.message || err) 
+            console.error('enable skipped:', err?.message || err) 
         }
 
         // 設定 WADO 載入器（使用 Web Workers）
@@ -108,12 +107,10 @@ function DicomViewer() {
           return
         }
 
-        console.log(`總共 ${ids.length} 個 imageIds（包含多幀展開）`)
-
         setImageIds(ids)
         // 載入並顯示第一張
-        const first = await cornerstone.loadAndCacheImage(ids[0])
-        cornerstone.displayImage(element, first)
+        const firstImage = await cornerstone.loadAndCacheImage(ids[0])
+        cornerstone.displayImage(element, firstImage)
         setCurrentSlice(0)
         setIsCornerstoneEnabled(true)
       } catch (err) {
@@ -123,6 +120,7 @@ function DicomViewer() {
 
     initViewer()
 
+    // 清理
     return () => {
       cornerstone.disable(element)
       setIsCornerstoneEnabled(false)
@@ -136,14 +134,18 @@ function DicomViewer() {
 
     const handleWheel = async (event) => {
       event.preventDefault()
+      // 計算 deltaY 的符號，決定向上或向下滾動
       const delta = Math.sign(event.deltaY)
+      // 計算新的 slice 索引，確保在內部範圍
       const newSlice = Math.max(0, Math.min(currentSlice - delta, imageIds.length - 1))
+      // 如果新的 slice 索引與當前不同，則顯示新的 slice
       if (newSlice !== currentSlice) {
         await displayImageAtSlice(newSlice)
       }
     }
-
+    // 綁定滾輪事件
     element.addEventListener('wheel', handleWheel, { passive: false })
+    // 清理
     return () => element.removeEventListener('wheel', handleWheel)
   }, [currentSlice, imageIds.length, isCornerstoneEnabled, displayImageAtSlice])
 
@@ -160,6 +162,7 @@ function DicomViewer() {
     }
   }, [isCornerstoneEnabled, imageIds.length, displayImageAtSlice])
 
+  // 檢查 slice 是否存在
   const sliceExists = (sliceNumber) => sliceNumber >= 1 && sliceNumber <= imageIds.length
 
   return (
