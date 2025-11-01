@@ -20,13 +20,46 @@ function DicomViewer() {
   const [imageIds, setImageIds] = useState([])
   const [isCornerstoneEnabled, setIsCornerstoneEnabled] = useState(false)
 
+  // 檢測 DICOM 檔案是否為多幀，並返回所有 imageIds（包含展開的多幀）
+  const buildImageIds = useCallback(async (dicomFiles) => {
+    const allImageIds = []
+    
+    for (const fileUrl of dicomFiles) {
+      try {
+        // 先載入第一個 imageId 來檢查是否為多幀
+        const baseImageId = `wadouri:${fileUrl}`
+        const image = await cornerstone.loadAndCacheImage(baseImageId)
+        
+        // 檢查 NumberOfFrames tag (0028,0008) - 使用 intString 因為是 IS 類型
+        const numberOfFrames = image.data.intString('x00280008')
+        
+        if (numberOfFrames && parseInt(numberOfFrames) > 1) {
+          // 多幀圖像：為每一幀生成 imageId
+          const frameCount = parseInt(numberOfFrames)
+          console.log(`多幀圖像 ${fileUrl}: ${frameCount} 幀`)
+          for (let frame = 0; frame < frameCount; frame++) {
+            allImageIds.push(`${baseImageId}?frame=${frame}`)
+          }
+        } else {
+          // 單幀圖像：直接使用 base imageId
+          allImageIds.push(baseImageId)
+        }
+      } catch (error) {
+        console.warn(`無法讀取 ${fileUrl}:`, error)
+        // 即使讀取失敗，也加入 base imageId（讓後續錯誤處理）
+        allImageIds.push(`wadouri:${fileUrl}`)
+      }
+    }
+    
+    return allImageIds
+  }, [])
+
   // 顯示指定 slice（0-based）
   const displayImageAtSlice = useCallback(async (sliceIndex) => {
     if (!elementRef.current || !isCornerstoneEnabled || imageIds.length === 0) return
     try {
       const imageId = imageIds[sliceIndex]
       const image = await cornerstone.loadAndCacheImage(imageId)
-      // const totalFrames = image.data.string('x00280008')
       cornerstone.displayImage(elementRef.current, image)
       setCurrentSlice(sliceIndex)
     } catch (error) {
@@ -43,6 +76,7 @@ function DicomViewer() {
     // 取得要載入的 DICOM 檔案清單（優先：Vite glob；否則略過）
     const loadFiles = async () => {
       if (Array.isArray(DICOM_GLOB_URLS) && DICOM_GLOB_URLS.length > 0) return DICOM_GLOB_URLS
+      return []
     }
 
     const initViewer = async () => {
@@ -60,13 +94,21 @@ function DicomViewer() {
           decodeConfig: { convertFloatPixelDataToInt: false },
         })
 
-        // 檔案 → imageId（wadouri:URL）
+        // 取得檔案清單
         const dicomFiles = await loadFiles()
-        const ids = dicomFiles.map(f => `wadouri:${f}`)
-        if (!ids.length) {
+        if (!dicomFiles.length) {
           console.error('No DICOM files found')
           return
         }
+
+        // 使用 buildImageIds 來處理多幀圖像
+        const ids = await buildImageIds(dicomFiles)
+        if (!ids.length) {
+          console.error('No valid imageIds generated')
+          return
+        }
+
+        console.log(`總共 ${ids.length} 個 imageIds（包含多幀展開）`)
 
         setImageIds(ids)
         // 載入並顯示第一張
@@ -85,7 +127,7 @@ function DicomViewer() {
       cornerstone.disable(element)
       setIsCornerstoneEnabled(false)
     }
-  }, [])
+  }, [buildImageIds])
 
   // 滾輪事件：向上/下滾動切換 slice（含邊界保護）
   useEffect(() => {
@@ -167,4 +209,5 @@ function DicomViewer() {
 }
 
 export default DicomViewer
+
 
